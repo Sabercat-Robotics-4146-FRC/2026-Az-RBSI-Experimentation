@@ -72,9 +72,9 @@ public final class Constants {
   //       under strict caveat emptor -- and submit any error and bugfixes
   //       via GitHub issues.
   private static SwerveType swerveType = SwerveType.PHOENIX6; // PHOENIX6, YAGSL
-  private static CTREPro phoenixPro = CTREPro.UNLICENSED; // LICENSED, UNLICENSED
-  private static AutoType autoType = AutoType.MANUAL; // MANUAL, PATHPLANNER, CHOREO
-  private static VisionType visionType = VisionType.NONE; // PHOTON, LIMELIGHT, NONE
+  private static CTREPro phoenixPro = CTREPro.LICENSED; // LICENSED, UNLICENSED
+  private static AutoType autoType = AutoType.PATHPLANNER; // MANUAL, PATHPLANNER, CHOREO
+  private static VisionType visionType = VisionType.PHOTON; // PHOTON, LIMELIGHT, NONE
 
   /** Enumerate the robot types (name your robots here) */
   public static enum RobotType {
@@ -467,11 +467,11 @@ public final class Constants {
     public static final CameraConfig[] ALL = {
       new CameraConfig(
           "camera_0",
-          new Transform3d(
-              Inches.of(-13.0),
-              Inches.of(13.0),
-              Inches.of(12.0),
-              new Rotation3d(0.0, 0.0, Math.PI / 2)),
+           new Transform3d(
+              Inches.of(-14.85),
+              Inches.of(4.5),
+              Inches.of(25),
+              new Rotation3d(Math.toRadians(0.0), Math.toRadians(-16.9), Math.toRadians(180))),
           1.0,
           new SimCameraProperties() {
             {
@@ -485,11 +485,11 @@ public final class Constants {
       //
       new CameraConfig(
           "camera_1",
-          new Transform3d(
-              Inches.of(-13.0),
-              Inches.of(-13.0),
-              Inches.of(12.0),
-              new Rotation3d(0.0, 0.0, -Math.PI / 2)),
+         new Transform3d(
+              Inches.of(4.5),
+              Inches.of(-14.9),
+              Inches.of(20),
+              new Rotation3d(Math.toRadians(8), Math.toRadians(4), 0.0)),
           1.0,
           new SimCameraProperties() {
             {
