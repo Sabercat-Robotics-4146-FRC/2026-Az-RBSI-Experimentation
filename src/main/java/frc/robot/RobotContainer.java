@@ -3,9 +3,15 @@
 // Copyright (c) 2021-2026 Littleton Robotics
 // http://github.com/Mechanical-Advantage
 //
-// Use of this source code is governed by a BSD
-// license that can be found in the AdvantageKit-License.md file
-// at the root directory of this project.
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// version 3 as published by the Free Software Foundation or
+// available in the root directory of this project.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
 //
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
@@ -75,6 +81,9 @@ import org.photonvision.simulation.VisionSystemSim;
 /** This is the location for defining robot hardware, commands, and controller button bindings. */
 public class RobotContainer {
 
+  private static final boolean USE_MAPLESIM = true;
+  public static final boolean MAPLESIM = USE_MAPLESIM && Robot.isSimulation();
+
   /** Define the Driver and, optionally, the Operator/Co-Driver Controllers */
   // Replace with ``CommandPS4Controller`` or ``CommandJoystick`` if needed
   final CommandXboxController driverController = new CommandXboxController(0); // Main Driver
@@ -96,15 +105,13 @@ public class RobotContainer {
 
   // These are "Virtual Subsystems" that report information but have no motors
   private final Imu m_imu;
+  private final Vision m_vision;
 
   @SuppressWarnings("unused")
   private final Accelerometer m_accel;
 
   @SuppressWarnings("unused")
   private final RBSIPowerMonitor m_power;
-
-  @SuppressWarnings("unused")
-  private final Vision m_vision;
 
   @SuppressWarnings("unused")
   private List<RBSICANHealth> canHealth;
@@ -128,36 +135,7 @@ public class RobotContainer {
   // Alerts
   private final Alert aprilTagLayoutAlert = new Alert("", AlertType.INFO);
 
-  // Vision Factories
-  private VisionIO[] buildVisionIOsReal(Drive drive) {
-    return switch (Constants.getVisionType()) {
-      case PHOTON ->
-          Arrays.stream(Cameras.ALL)
-              .map(c -> (VisionIO) new VisionIOPhotonVision(c.name(), c.robotToCamera()))
-              .toArray(VisionIO[]::new);
-
-      case LIMELIGHT ->
-          Arrays.stream(Cameras.ALL)
-              .map(c -> (VisionIO) new VisionIOLimelight(c.name(), drive::getHeading))
-              .toArray(VisionIO[]::new);
-
-      case NONE -> new VisionIO[] {new VisionIO() {}};
-    };
-  }
-
-  private static VisionIO[] buildVisionIOsSim(Drive drive) {
-    var cams = Constants.Cameras.ALL;
-    VisionIO[] ios = new VisionIO[cams.length];
-    for (int i = 0; i < cams.length; i++) {
-      var cfg = cams[i];
-      ios[i] = new VisionIOPhotonVisionSim(cfg.name(), cfg.robotToCamera(), drive::getPose);
-    }
-    return ios;
-  }
-
-  private VisionIO[] buildVisionIOsReplay() {
-    return new VisionIO[] {new VisionIO() {}};
-  }
+  public static RobotContainer instance;
 
   /**
    * Constructor for the Robot Container. This container holds subsystems, opertator interface
@@ -179,7 +157,9 @@ public class RobotContainer {
 
         m_drivebase = new Drive(m_imu);
         m_flywheel = new Flywheel(new FlywheelIOSim()); // new Flywheel(new FlywheelIOTalonFX());
-        m_vision = new Vision(m_drivebase::addVisionMeasurement, buildVisionIOsReal(m_drivebase));
+        m_vision =
+            new Vision(
+                m_drivebase, m_drivebase::addVisionMeasurement, buildVisionIOsReal(m_drivebase));
         m_accel = new Accelerometer(m_imu);
         sweep = null;
         break;
@@ -192,12 +172,10 @@ public class RobotContainer {
         m_flywheel = new Flywheel(new FlywheelIOSim());
 
         // ---------------- Vision IOs (robot code) ----------------
-        var cams = frc.robot.Constants.Cameras.ALL;
-
-        // If you keep Vision expecting exactly two cameras:
-        VisionIO[] visionIOs = buildVisionIOsSim(m_drivebase);
-        m_vision = new Vision(m_drivebase::addVisionMeasurement, visionIOs);
-
+        var cams = Cameras.ALL;
+        m_vision =
+            new Vision(
+                m_drivebase, m_drivebase::addVisionMeasurement, buildVisionIOsSim(m_drivebase));
         m_accel = new Accelerometer(m_imu);
 
         // ---------------- CameraSweepEvaluator (sim-only analysis) ----------------
@@ -231,7 +209,8 @@ public class RobotContainer {
         m_imu = new Imu(new ImuIOSim() {});
         m_drivebase = new Drive(m_imu);
         m_flywheel = new Flywheel(new FlywheelIO() {});
-        m_vision = new Vision(m_drivebase::addVisionMeasurement, buildVisionIOsReplay());
+        m_vision =
+            new Vision(m_drivebase, m_drivebase::addVisionMeasurement, buildVisionIOsReplay());
         m_accel = new Accelerometer(m_imu);
         sweep = null;
         break;
@@ -493,6 +472,11 @@ public class RobotContainer {
     return m_drivebase;
   }
 
+  /** Vision getter method for use with Robot.java */
+  public Vision getVision() {
+    return m_vision;
+  }
+
   /**
    * Set up the SysID routines from AdvantageKit
    *
@@ -534,6 +518,40 @@ public class RobotContainer {
           "Flywheel SysId (Dynamic Reverse)",
           m_flywheel.sysIdDynamic(SysIdRoutine.Direction.kReverse));
     }
+  }
+
+  // Vision Factories
+  // Vision Factories (REAL)
+  private VisionIO[] buildVisionIOsReal(Drive drive) {
+    return switch (Constants.getVisionType()) {
+      case PHOTON ->
+          Arrays.stream(Constants.Cameras.ALL)
+              .map(c -> (VisionIO) new VisionIOPhotonVision(c.name(), c.robotToCamera()))
+              .toArray(VisionIO[]::new);
+
+      case LIMELIGHT ->
+          Arrays.stream(Constants.Cameras.ALL)
+              .map(c -> (VisionIO) new VisionIOLimelight(c.name(), drive::getHeading))
+              .toArray(VisionIO[]::new);
+
+      case NONE -> new VisionIO[] {}; // recommended: no cameras
+    };
+  }
+
+  // Vision Factories (SIM)
+  private VisionIO[] buildVisionIOsSim(Drive drive) {
+    var cams = Constants.Cameras.ALL;
+    VisionIO[] ios = new VisionIO[cams.length];
+    for (int i = 0; i < cams.length; i++) {
+      var cfg = cams[i];
+      ios[i] = new VisionIOPhotonVisionSim(cfg.name(), cfg.robotToCamera(), drive::getPose);
+    }
+    return ios;
+  }
+
+  // Vision Factories (REPLAY)
+  private VisionIO[] buildVisionIOsReplay() {
+    return new VisionIO[] {}; // simplest: Vision does nothing during replay
   }
 
   /**
