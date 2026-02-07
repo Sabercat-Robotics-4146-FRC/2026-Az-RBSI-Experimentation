@@ -53,6 +53,7 @@ import frc.robot.subsystems.flywheel_example.FlywheelIO;
 import frc.robot.subsystems.flywheel_example.FlywheelIOSim;
 import frc.robot.subsystems.imu.Imu;
 import frc.robot.subsystems.imu.ImuIOSim;
+import frc.robot.subsystems.imu.gyro.GyroIOPigeon2;
 import frc.robot.subsystems.vision.CameraSweepEvaluator;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
@@ -155,7 +156,7 @@ public class RobotContainer {
         // Get the IMU instance
         m_imu = new Imu(SwerveConstants.kImu.factory.get());
 
-        m_drivebase = new Drive(m_imu);
+        m_drivebase = new Drive(m_imu, new GyroIOPigeon2());
         m_flywheel = new Flywheel(new FlywheelIOSim()); // new Flywheel(new FlywheelIOTalonFX());
         m_vision =
             new Vision(
@@ -168,7 +169,7 @@ public class RobotContainer {
         RBSICANBusRegistry.initSim(CANBuses.RIO, CANBuses.DRIVE);
 
         m_imu = new Imu(new ImuIOSim());
-        m_drivebase = new Drive(m_imu);
+        m_drivebase = new Drive(m_imu, new GyroIOPigeon2());
         m_flywheel = new Flywheel(new FlywheelIOSim());
 
         // ---------------- Vision IOs (robot code) ----------------
@@ -207,7 +208,7 @@ public class RobotContainer {
         // Replayed robot, disable IO implementations
         RBSICANBusRegistry.initSim(CANBuses.RIO, CANBuses.DRIVE);
         m_imu = new Imu(new ImuIOSim() {});
-        m_drivebase = new Drive(m_imu);
+        m_drivebase = new Drive(m_imu, new GyroIOPigeon2());
         m_flywheel = new Flywheel(new FlywheelIO() {});
         m_vision =
             new Vision(m_drivebase, m_drivebase::addVisionMeasurement, buildVisionIOsReplay());

@@ -467,7 +467,7 @@ public final class Constants {
     public static final CameraConfig[] ALL = {
       new CameraConfig(
           "camera_0",
-           new Transform3d(
+          new Transform3d(
               Inches.of(-14.85),
               Inches.of(4.5),
               Inches.of(25),
@@ -485,7 +485,7 @@ public final class Constants {
       //
       new CameraConfig(
           "camera_1",
-         new Transform3d(
+          new Transform3d(
               Inches.of(4.5),
               Inches.of(-14.9),
               Inches.of(20),

@@ -29,6 +29,7 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -47,7 +48,9 @@ import frc.robot.Constants;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DrivebaseConstants;
 import frc.robot.Constants.RobotConstants;
+import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.imu.Imu;
+import frc.robot.subsystems.imu.gyro.GyroIO;
 import frc.robot.util.ConcurrentTimeInterpolatableBuffer;
 import frc.robot.util.LocalADStarAK;
 import frc.robot.util.RBSIEnum.Mode;
@@ -73,6 +76,8 @@ public class Drive extends RBSISubsystem {
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
   private final SysIdRoutine sysId;
 
+  public static final double ODOMETRY_FREQUENCY = TunerConstants.kCANBus.isNetworkFD() ? 250.0 : 100.0;
+
   // Buffers for necessary things
   private final ConcurrentTimeInterpolatableBuffer<Pose2d> poseBuffer =
       ConcurrentTimeInterpolatableBuffer.createBuffer(DrivebaseConstants.kHistorySize);
@@ -87,7 +92,10 @@ public class Drive extends RBSISubsystem {
 
   // Declare odometry and pose-related variables
   static final Lock odometryLock = new ReentrantLock();
+  private final GyroIO gyroIO;
+  private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
+  private Rotation2d rawGyroRotation = Rotation2d.kZero;
   private SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -113,8 +121,9 @@ public class Drive extends RBSISubsystem {
   private volatile double lastPoseResetTimestamp = Double.NEGATIVE_INFINITY;
 
   /** Constructor */
-  public Drive(Imu imu) {
+  public Drive(Imu imu, GyroIO gyroIO) {
     this.imu = imu;
+    this.gyroIO = gyroIO;
 
     // Define the Angle Controller
     angleController =
@@ -254,6 +263,8 @@ public class Drive extends RBSISubsystem {
   @Override
   public void rbsiPeriodic() {
     odometryLock.lock();
+    gyroIO.updateInputs(gyroInputs);
+    Logger.processInputs("Drive/Gyro", gyroInputs);
     try {
       // Ensure IMU inputs are fresh for this cycle
       final var imuInputs = imu.getInputs();
@@ -378,8 +389,18 @@ public class Drive extends RBSISubsystem {
             }
           }
 
+          // Update gyro angle
+      if (gyroInputs.connected) {
+        // Use the real gyro angle
+        rawGyroRotation = gyroInputs.odometryYawPositions[i];
+      } else {
+        // Use the angle delta from the kinematics and module deltas
+        Twist2d twist = kinematics.toTwist2d(moduleDeltas);
+        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
+      }
+
           // Feed estimator at this historical timestamp
-          m_PoseEstimator.updateWithTime(t, Rotation2d.fromRadians(yawRad), odomPositions);
+          m_PoseEstimator.updateWithTime(t, rawGyroRotation, odomPositions);
 
           // Maintain pose history in SAME timebase as estimator
           poseBuffer.addSample(t, m_PoseEstimator.getEstimatedPosition());
@@ -600,7 +621,7 @@ public class Drive extends RBSISubsystem {
     if (Constants.getMode() == Mode.SIM) {
       return simPhysics.getYaw();
     }
-    return imu.getYaw();
+    return rawGyroRotation;
   }
 
   /**
