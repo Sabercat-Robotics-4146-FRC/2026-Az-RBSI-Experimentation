@@ -18,7 +18,6 @@
 package frc.robot;
 
 import com.revrobotics.util.StatusLogger;
-
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -177,7 +176,6 @@ public class Robot extends LoggedRobot {
                   Math.toRadians(180), Math.sin(Timer.getTimestamp()) - 1.0, Math.toRadians(90)))
         });
   }
-  
 
   /** This function is called once when the robot is disabled. */
   @Override

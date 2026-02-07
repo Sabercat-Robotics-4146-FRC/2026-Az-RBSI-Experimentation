@@ -64,7 +64,7 @@ public final class Constants {
    * Define the various multiple robots that use this same code (e.g., COMPBOT, DEVBOT, SIMBOT,
    * etc.) and the operating modes of the code (REAL, SIM, or REPLAY)
    */
-  private static RobotType robotType = RobotType.SIMBOT;
+  private static RobotType robotType = RobotType. COMPBOT;
 
   // Define swerve, auto, and vision types being used
   // NOTE: Only PHOENIX6 swerve base has been tested at this point!!!
@@ -92,7 +92,7 @@ public final class Constants {
   }
 
   /** Disable the Hardware Abstraction Layer, if requested */
-  public static boolean disableHAL = true;
+  public static boolean disableHAL = false;
 
   public static void disableHAL() {
     disableHAL = true;
@@ -104,7 +104,7 @@ public final class Constants {
   /** General Constants **************************************************** */
   public static final double loopPeriodSecs = 0.02;
 
-  public static final boolean tuningMode = false;
+  public static final boolean tuningMode = true;
 
   /************************************************************************* */
   /** Physical Constants for Robot Operation ******************************* */
@@ -467,7 +467,7 @@ public final class Constants {
     public static final CameraConfig[] ALL = {
       new CameraConfig(
           "camera_0",
-           new Transform3d(
+          new Transform3d(
               Inches.of(-14.85),
               Inches.of(4.5),
               Inches.of(25),
@@ -485,7 +485,7 @@ public final class Constants {
       //
       new CameraConfig(
           "camera_1",
-         new Transform3d(
+          new Transform3d(
               Inches.of(4.5),
               Inches.of(-14.9),
               Inches.of(20),
