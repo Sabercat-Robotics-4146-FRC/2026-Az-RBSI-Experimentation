@@ -76,7 +76,8 @@ public class Drive extends RBSISubsystem {
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
   private final SysIdRoutine sysId;
 
-  public static final double ODOMETRY_FREQUENCY = TunerConstants.kCANBus.isNetworkFD() ? 250.0 : 100.0;
+  public static final double ODOMETRY_FREQUENCY =
+      TunerConstants.kCANBus.isNetworkFD() ? 250.0 : 100.0;
 
   // Buffers for necessary things
   private final ConcurrentTimeInterpolatableBuffer<Pose2d> poseBuffer =
@@ -390,14 +391,14 @@ public class Drive extends RBSISubsystem {
           }
 
           // Update gyro angle
-      if (gyroInputs.connected) {
-        // Use the real gyro angle
-        rawGyroRotation = gyroInputs.odometryYawPositions[i];
-      } else {
-        // Use the angle delta from the kinematics and module deltas
-        Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-        rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
-      }
+          if (gyroInputs.connected) {
+            // Use the real gyro angle
+            rawGyroRotation = gyroInputs.odometryYawPositions[i];
+          } else {
+            // Use the angle delta from the kinematics and module deltas
+            Twist2d twist = kinematics.toTwist2d(moduleDeltas);
+            rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
+          }
 
           // Feed estimator at this historical timestamp
           m_PoseEstimator.updateWithTime(t, rawGyroRotation, odomPositions);

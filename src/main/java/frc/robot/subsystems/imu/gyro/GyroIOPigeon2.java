@@ -19,7 +19,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.PhoenixOdometryThread;
-
 import java.util.Queue;
 
 /** IO implementation for Pigeon 2. */
