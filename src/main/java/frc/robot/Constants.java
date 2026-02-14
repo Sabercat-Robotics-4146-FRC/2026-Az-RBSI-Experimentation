@@ -110,12 +110,12 @@ public final class Constants {
   /** Physical Constants for Robot Operation ******************************* */
   public static final class RobotConstants {
 
-    public static final Mass kRobotMass = Pounds.of(100.);
+    public static final Mass kRobotMass = Pounds.of(120);
     public static final Matter kChassis =
-        new Matter(new Translation3d(0, 0, Inches.of(8).in(Meters)), kRobotMass.in(Kilograms));
+        new Matter(new Translation3d(.66, .66, Inches.of(8).in(Meters)), kRobotMass.in(Kilograms));
     // Robot moment of intertial; this can be obtained from a CAD model of your drivetrain. Usually,
     // this is between 3 and 8 kg*m^2.
-    public static final double kRobotMOI = 6.8;
+    public static final double kRobotMOI = 3.95;
 
     // Wheel coefficient of friction
     public static final double kWheelCOF = 1.2;
@@ -469,7 +469,7 @@ public final class Constants {
           "camera_0",
           new Transform3d(
               Inches.of(-14.85),
-              Inches.of(4.5),
+              Inches.of(-4.5),
               Inches.of(25),
               new Rotation3d(Math.toRadians(0.0), Math.toRadians(-16.9), Math.toRadians(180))),
           1.0,
@@ -488,7 +488,7 @@ public final class Constants {
           new Transform3d(
               Inches.of(4.5),
               Inches.of(-14.9),
-              Inches.of(20),
+              Inches.of(24),
               new Rotation3d(Math.toRadians(8), Math.toRadians(4), 0.0)),
           1.0,
           new SimCameraProperties() {
