@@ -1,0 +1,109 @@
+// Copyright (c) 2024-2026 Az-FIRST
+// http://github.com/AZ-First
+// Copyright (c) 2021-2026 Littleton Robotics
+// http://github.com/Mechanical-Advantage
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the AdvantageKit-License.md file
+// at the root directory of this project.
+
+package frc.robot.subsystems.intake;
+
+import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.Constants.FlywheelConstants.*;
+
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants;
+import frc.robot.util.RBSISubsystem;
+import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
+
+public class Intake extends RBSISubsystem {
+  private final IntakeIO io;
+  // private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
+  private final SysIdRoutine sysId;
+
+  /** Creates a new Intake. */
+  public Intake(IntakeIO io) {
+    this.io = io;
+
+    // Switch constants based on mode (the physics simulator is treated as a
+    // separate robot with different tuning)
+    switch (Constants.getMode()) {
+      case REAL:
+      case REPLAY:
+        io.configureGains(kPreal, 0.0, kDreal, kSreal, kVreal, kAreal);
+        break;
+      case SIM:
+      default:
+        io.configureGains(kPsim, 0.0, kDsim, kSsim, kVsim, kAsim);
+        break;
+    }
+
+    // Configure SysId
+    sysId =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                null,
+                null,
+                (state) -> Logger.recordOutput("Intake/SysIdState", state.toString())),
+            new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
+  }
+
+  /** Periodic function -- inherits timing logic from RBSISubsystem */
+  @Override
+  protected void rbsiPeriodic() {
+    // io.updateInputs(inputs);
+    // Logger.processInputs("Flywheel", inputs);
+  }
+
+  /** Run open loop at the specified voltage. */
+  public void runVolts(double volts) {
+    io.setVoltage(volts);
+  }
+
+  /** Run closed loop at the specified velocity. */
+  public void runVelocity(double velocityRPM) {
+    var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
+    io.setVelocity(velocityRadPerSec);
+
+    // Log flywheel setpoint
+    Logger.recordOutput("Intake/SetpointRPM", velocityRPM);
+  }
+
+  /** Stops the flywheel. */
+  public void stop() {
+    io.stop();
+  }
+
+  /** Returns a command to run a quasistatic test in the specified direction. */
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+    return sysId.quasistatic(direction);
+  }
+
+  /** Returns a command to run a dynamic test in the specified direction. */
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+    return sysId.dynamic(direction);
+  }
+
+  /** Returns the current velocity in RPM. */
+  @AutoLogOutput(key = "Mechanism/Intake")
+  public double getVelocityRPM() {
+    // return Units.radiansPerSecondToRotationsPerMinute(inputs.velocityRadPerSec);
+    return 0.0; // Placeholder - replace with actual implementation
+  }
+
+  /** Returns the current velocity in radians per second. */
+  public double getCharacterizationVelocity() {
+    // return inputs.velocityRadPerSec;
+    return 0.0; // Placeholder - replace with actual implementation
+  }
+
+  @Override
+  public int[] getPowerPorts() {
+    return io.getPowerPorts();
+  }
+}

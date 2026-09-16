@@ -71,9 +71,9 @@ public final class Constants {
   //       under strict caveat emptor -- and submit any error and bugfixes
   //       via GitHub issues.
   private static SwerveType swerveType = SwerveType.PHOENIX6; // PHOENIX6, YAGSL
-  private static CTREPro phoenixPro = CTREPro.UNLICENSED; // LICENSED, UNLICENSED
-  private static AutoType autoType = AutoType.MANUAL; // MANUAL, PATHPLANNER, CHOREO
-  private static VisionType visionType = VisionType.NONE; // PHOTON, LIMELIGHT, NONE
+  private static CTREPro phoenixPro = CTREPro.LICENSED; // LICENSED, UNLICENSED
+  private static AutoType autoType = AutoType.PATHPLANNER; // MANUAL, PATHPLANNER, CHOREO
+  private static VisionType visionType = VisionType.PHOTON; // PHOTON, LIMELIGHT, NONE
 
   /** Enumerate the robot types (name your robots here) */
   public static enum RobotType {
@@ -164,7 +164,7 @@ public final class Constants {
   /************************************************************************* */
   /** List of Robot CAN Busses ********************************************* */
   public static final class CANBuses {
-    public static final String RIO = "";
+    public static final String RIO = "rio";
     public static final String DRIVE = "DriveTrain";
 
     public static final String[] ALL = {RIO, DRIVE};
@@ -213,8 +213,11 @@ public final class Constants {
     /* SUBSYSTEM CAN DEVICE IDS */
     // This is where mechanism subsystem devices are defined (Including ID, bus, and power port)
     // Example:
-    public static final RobotDeviceId FLYWHEEL_LEADER = new RobotDeviceId(3, CANBuses.RIO, 8);
-    public static final RobotDeviceId FLYWHEEL_FOLLOWER = new RobotDeviceId(4, CANBuses.RIO, 9);
+    public static final RobotDeviceId INTAKE = new RobotDeviceId(25, CANBuses.RIO, 8);
+    public static final RobotDeviceId EXTENSION = new RobotDeviceId(26, CANBuses.RIO, 8);
+    public static final RobotDeviceId KICKER = new RobotDeviceId(23, CANBuses.RIO, 8);
+    public static final RobotDeviceId FLYWHEEL_FOLLOWER = new RobotDeviceId(90, CANBuses.RIO, 9);
+    public static final RobotDeviceId FLYWHEEL_LEADER = new RobotDeviceId(99, CANBuses.RIO, 9);
 
     /* BEAM BREAK and/or LIMIT SWITCH DIO CHANNELS */
     // This is where digital I/O feedback devices are defined
@@ -453,12 +456,9 @@ public final class Constants {
     // Example Cameras are mounted in the back corners, 18" up from the floor, facing sideways
     public static final CameraConfig[] ALL = {
       new CameraConfig(
-          "camera_0",
+          "cam1",
           new Transform3d(
-              Inches.of(-13.0),
-              Inches.of(13.0),
-              Inches.of(12.0),
-              new Rotation3d(0.0, 0.0, Math.PI / 2)),
+              Inches.of(15), Inches.of(2), Inches.of(5.5), new Rotation3d(0.0, 0.0, 45)),
           1.0,
           new SimCameraProperties() {
             {

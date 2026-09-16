@@ -39,6 +39,7 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.FieldConstants.AprilTagLayoutType;
 import frc.robot.commands.AutopilotCommands;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.RunIntake;
 import frc.robot.subsystems.accelerometer.Accelerometer;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SwerveConstants;
@@ -47,6 +48,12 @@ import frc.robot.subsystems.flywheel_example.FlywheelIO;
 import frc.robot.subsystems.flywheel_example.FlywheelIOSim;
 import frc.robot.subsystems.imu.Imu;
 import frc.robot.subsystems.imu.ImuIOSim;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOTalonFX;
+import frc.robot.subsystems.kicker.Kicker;
+import frc.robot.subsystems.kicker.KickerIO;
+import frc.robot.subsystems.kicker.KickerIOTalonFX;
 import frc.robot.subsystems.vision.CameraSweepEvaluator;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
@@ -94,8 +101,12 @@ public class RobotContainer {
 
   // ... Add additional subsystems here (e.g., elevator, arm, etc.)
 
+  private final Intake m_intake;
+
   // These are "Virtual Subsystems" that report information but have no motors
   private final Imu m_imu;
+
+  private final Kicker m_kicker;
 
   @SuppressWarnings("unused")
   private final Accelerometer m_accel;
@@ -181,6 +192,8 @@ public class RobotContainer {
         m_flywheel = new Flywheel(new FlywheelIOSim()); // new Flywheel(new FlywheelIOTalonFX());
         m_vision = new Vision(m_drivebase::addVisionMeasurement, buildVisionIOsReal(m_drivebase));
         m_accel = new Accelerometer(m_imu);
+        m_intake = new Intake(new IntakeIOTalonFX());
+        m_kicker = new Kicker(new KickerIOTalonFX());
         sweep = null;
         break;
 
@@ -190,6 +203,8 @@ public class RobotContainer {
         m_imu = new Imu(new ImuIOSim());
         m_drivebase = new Drive(m_imu);
         m_flywheel = new Flywheel(new FlywheelIOSim());
+        m_intake = new Intake(new IntakeIOTalonFX());
+        m_kicker = new Kicker(new KickerIOTalonFX());
 
         // ---------------- Vision IOs (robot code) ----------------
         var cams = frc.robot.Constants.Cameras.ALL;
@@ -231,8 +246,10 @@ public class RobotContainer {
         m_imu = new Imu(new ImuIOSim() {});
         m_drivebase = new Drive(m_imu);
         m_flywheel = new Flywheel(new FlywheelIO() {});
+        m_intake = new Intake(new IntakeIO() {});
         m_vision = new Vision(m_drivebase::addVisionMeasurement, buildVisionIOsReplay());
         m_accel = new Accelerometer(m_imu);
+        m_kicker = new Kicker(new KickerIO() {});
         sweep = null;
         break;
     }
@@ -354,12 +371,18 @@ public class RobotContainer {
                 m_drivebase));
 
     // Press A button -> BRAKE
-    driverController
-        .a()
-        .whileTrue(Commands.runOnce(() -> m_drivebase.setMotorBrake(true), m_drivebase));
+    driverController.a().whileTrue(new RunIntake(m_intake));
 
     // Press X button --> Stop with wheels in X-Lock position
-    driverController.x().onTrue(Commands.runOnce(m_drivebase::stopWithX, m_drivebase));
+    //driverController.x().onTrue(Commands.runOnce(m_drivebase::stopWithX, m_drivebase));
+    driverController
+        .x()
+        .whileTrue(
+            Commands.runOnce(
+                () -> {
+                  m_kicker.runVolts(5);
+                },
+                m_kicker));
 
     // Press Y button --> Manually Re-Zero the Gyro
     driverController
