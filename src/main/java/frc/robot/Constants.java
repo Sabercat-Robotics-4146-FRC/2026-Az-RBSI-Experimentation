@@ -215,7 +215,9 @@ public final class Constants {
     // Example:
     public static final RobotDeviceId INTAKE = new RobotDeviceId(25, CANBuses.RIO, 8);
     public static final RobotDeviceId EXTENSION = new RobotDeviceId(26, CANBuses.RIO, 8);
-    public static final RobotDeviceId KICKER = new RobotDeviceId(23, CANBuses.RIO, 8);
+    public static final RobotDeviceId SHOOTER = new RobotDeviceId(22, CANBuses.DRIVE, 8);
+    public static final RobotDeviceId KICKER = new RobotDeviceId(23, CANBuses.DRIVE, 8);
+    public static final RobotDeviceId BELT = new RobotDeviceId(24, CANBuses.RIO, 6);
     public static final RobotDeviceId FLYWHEEL_FOLLOWER = new RobotDeviceId(90, CANBuses.RIO, 9);
     public static final RobotDeviceId FLYWHEEL_LEADER = new RobotDeviceId(99, CANBuses.RIO, 9);
 

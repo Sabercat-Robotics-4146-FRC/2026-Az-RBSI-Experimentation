@@ -7,7 +7,7 @@
 // license that can be found in the AdvantageKit-License.md file
 // at the root directory of this project.
 
-package frc.robot.subsystems.intake;
+package frc.robot.subsystems.shooter;
 
 import static frc.robot.Constants.FlywheelConstants.*;
 import static frc.robot.Constants.RobotDevices.*;
@@ -32,10 +32,10 @@ import frc.robot.Constants.PowerConstants;
 import frc.robot.util.PhoenixUtil;
 import frc.robot.util.RBSIEnum.CTREPro;
 
-public class IntakeIOTalonFX implements IntakeIO {
+public class ShooterIOTalonFX implements ShooterIO {
 
   // Define the leader / follower motors from the Ports section of RobotContainer
-  private final TalonFX leader = new TalonFX(INTAKE.getDeviceNumber(), INTAKE.getCANBus());
+  private final TalonFX leader = new TalonFX(SHOOTER.getDeviceNumber(), SHOOTER.getCANBus());
   // IMPORTANT: Include here all devices listed above that are part of this mechanism!
   public final int[] powerPorts = {INTAKE.getPowerPort()};
 
@@ -47,7 +47,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   private final TalonFXConfiguration config = new TalonFXConfiguration();
   private final boolean isCTREPro = Constants.getPhoenixPro() == CTREPro.LICENSED;
 
-  public IntakeIOTalonFX() {
+  public ShooterIOTalonFX() {
     config.CurrentLimits.SupplyCurrentLimit = PowerConstants.kMotorPortMaxCurrent;
     config.CurrentLimits.SupplyCurrentLimitEnable = true;
     config.MotorOutput.NeutralMode =
@@ -83,7 +83,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   }
 
   @Override
-  public void updateInputs(IntakeIOInputs inputs) {
+  public void updateInputs(ShooterIOInputs inputs) {
     BaseStatusSignal.refreshAll(leaderPosition, leaderVelocity, leaderAppliedVolts, leaderCurrent);
     inputs.positionRad =
         Units.rotationsToRadians(leaderPosition.getValueAsDouble()) / kFlywheelGearRatio;

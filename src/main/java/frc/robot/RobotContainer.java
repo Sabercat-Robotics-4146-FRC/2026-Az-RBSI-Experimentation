@@ -18,6 +18,7 @@ import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -39,10 +40,17 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.FieldConstants.AprilTagLayoutType;
 import frc.robot.commands.AutopilotCommands;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.RunIntake;
+import frc.robot.commands.MainCommand;
+import frc.robot.commands.ShootCommand;
 import frc.robot.subsystems.accelerometer.Accelerometer;
+import frc.robot.subsystems.belt.Belt;
+import frc.robot.subsystems.belt.BeltIO;
+import frc.robot.subsystems.belt.BeltIOTalonFX;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.SwerveConstants;
+import frc.robot.subsystems.extension.Extension;
+import frc.robot.subsystems.extension.ExtensionIO;
+import frc.robot.subsystems.extension.ExtensionIOTalonFX;
 import frc.robot.subsystems.flywheel_example.Flywheel;
 import frc.robot.subsystems.flywheel_example.FlywheelIO;
 import frc.robot.subsystems.flywheel_example.FlywheelIOSim;
@@ -54,6 +62,9 @@ import frc.robot.subsystems.intake.IntakeIOTalonFX;
 import frc.robot.subsystems.kicker.Kicker;
 import frc.robot.subsystems.kicker.KickerIO;
 import frc.robot.subsystems.kicker.KickerIOTalonFX;
+import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIO;
+import frc.robot.subsystems.shooter.ShooterIOTalonFX;
 import frc.robot.subsystems.vision.CameraSweepEvaluator;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIO;
@@ -107,6 +118,12 @@ public class RobotContainer {
   private final Imu m_imu;
 
   private final Kicker m_kicker;
+
+  private final Belt m_belt;
+
+  private final Shooter m_shooter;
+
+  private final Extension m_extension;
 
   @SuppressWarnings("unused")
   private final Accelerometer m_accel;
@@ -194,6 +211,9 @@ public class RobotContainer {
         m_accel = new Accelerometer(m_imu);
         m_intake = new Intake(new IntakeIOTalonFX());
         m_kicker = new Kicker(new KickerIOTalonFX());
+        m_belt = new Belt(new BeltIOTalonFX());
+        m_shooter = new Shooter(new ShooterIOTalonFX());
+        m_extension = new Extension(new ExtensionIOTalonFX());
         sweep = null;
         break;
 
@@ -205,6 +225,9 @@ public class RobotContainer {
         m_flywheel = new Flywheel(new FlywheelIOSim());
         m_intake = new Intake(new IntakeIOTalonFX());
         m_kicker = new Kicker(new KickerIOTalonFX());
+        m_belt = new Belt(new BeltIOTalonFX());
+        m_shooter = new Shooter(new ShooterIOTalonFX());
+        m_extension = new Extension(new ExtensionIOTalonFX());
 
         // ---------------- Vision IOs (robot code) ----------------
         var cams = frc.robot.Constants.Cameras.ALL;
@@ -250,6 +273,9 @@ public class RobotContainer {
         m_vision = new Vision(m_drivebase::addVisionMeasurement, buildVisionIOsReplay());
         m_accel = new Accelerometer(m_imu);
         m_kicker = new Kicker(new KickerIO() {});
+        m_belt = new Belt(new BeltIO() {});
+        m_shooter = new Shooter(new ShooterIO() {});
+        m_extension = new Extension(new ExtensionIO() {});
         sweep = null;
         break;
     }
@@ -318,8 +344,14 @@ public class RobotContainer {
 
   /** Use this method to define your Autonomous commands for use with PathPlanner / Choreo */
   private void defineAutoCommands() {
-
-    // NamedCommands.registerCommand("Zero", Commands.runOnce(() -> m_drivebase.zero()));
+    NamedCommands.registerCommand(
+        "BeltCommand",
+        Commands.runOnce(
+            () -> {
+              m_belt.runVolts(5);
+            },
+            m_belt));
+    NamedCommands.registerCommand("ShooterCommand", new ShootCommand(m_shooter, m_kicker));
   }
 
   /**
@@ -358,6 +390,7 @@ public class RobotContainer {
 
     // ** Example Commands -- Remap, remove, or change as desired **
     // Press B button while driving --> ROBOT-CENTRIC
+    /*
     driverController
         .b()
         .onTrue(
@@ -368,37 +401,61 @@ public class RobotContainer {
                         () -> -driveStickY.value(),
                         () -> -driveStickX.value(),
                         () -> turnStickX.value()),
-                m_drivebase));
+                m_drivebase));*/
 
     // Press A button -> BRAKE
-    driverController.a().whileTrue(new RunIntake(m_intake));
-
+    driverController.a().toggleOnTrue(new MainCommand(this, m_extension, m_intake));
     // Press X button --> Stop with wheels in X-Lock position
-    //driverController.x().onTrue(Commands.runOnce(m_drivebase::stopWithX, m_drivebase));
-    driverController
-        .x()
-        .whileTrue(
+    // driverController.x().onTrue(Commands.runOnce(m_drivebase::stopWithX, m_drivebase));
+    driverController.x().toggleOnTrue(new ShootCommand(m_shooter, m_kicker));
+
+    /*driverController
+        .y()
+        .toggleOnTrue(
             Commands.runOnce(
                 () -> {
-                  m_kicker.runVolts(5);
+                  m_belt.runVolts(6);
                 },
-                m_kicker));
+                m_belt));
 
-    // Press Y button --> Manually Re-Zero the Gyro
     driverController
         .y()
-        .onTrue(
-            Commands.runOnce(m_drivebase::zeroHeadingForAlliance, m_drivebase)
-                .ignoringDisable(true));
+        .toggleOnFalse(
+            Commands.runOnce(
+                () -> {
+                  m_belt.runVolts(0);
+                },
+                m_belt));*/
+
+    driverController
+        .y()
+        .toggleOnTrue(
+            Commands.startEnd(
+                () -> m_belt.runVolts(8.5), // runs once when scheduled (on)
+                m_belt::stop, // runs when cancelled (off)
+                m_belt // subsystem requirement
+                ));
+
+    driverController
+        .b()
+        .toggleOnTrue(
+            Commands.startEnd(
+                () -> m_belt.runVolts(-10.5), // runs once when scheduled (on)
+                m_belt::stop, // runs when cancelled (off)
+                m_belt // subsystem requirement
+                ));
+    // Press Y button --> Manually Re-Zero the Gyro
+    // driverController.rightBumper().onTrue(new MainCommand(this, m_kicker, m_shooter));
 
     // Press RIGHT BUMPER --> Run the example flywheel
+    /*
     driverController
         .rightBumper()
         .whileTrue(
             Commands.startEnd(
                 () -> m_flywheel.runVelocity(flywheelSpeedInput.get()),
                 m_flywheel::stop,
-                m_flywheel));
+                m_flywheel));*/
 
     // Press LEFT BUMPER --> Drive to a pose 10 feet closer to the BLUE ALLIANCE wall
     driverController

@@ -19,7 +19,6 @@ import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicDutyCycle;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
-import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
@@ -27,6 +26,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants;
 import frc.robot.Constants.PowerConstants;
 import frc.robot.util.PhoenixUtil;
@@ -34,10 +34,14 @@ import frc.robot.util.RBSIEnum.CTREPro;
 
 public class ExtensionIOTalonFX implements ExtensionIO {
 
-  // Define the leader / follower motors from the Ports section of RobotContainer
+  // Define the leader motor from the Ports section of RobotContainer
   private final TalonFX leader = new TalonFX(EXTENSION.getDeviceNumber(), EXTENSION.getCANBus());
   // IMPORTANT: Include here all devices listed above that are part of this mechanism!
-  public final int[] powerPorts = {INTAKE.getPowerPort()};
+  public final int[] powerPorts = {EXTENSION.getPowerPort()};
+
+  // Limit switch wired into a roboRIO DIO port. Change the port number to match your wiring.
+  private static final int LIMIT_SWITCH_DIO_PORT = 0;
+  private final DigitalInput limitSwitch = new DigitalInput(LIMIT_SWITCH_DIO_PORT);
 
   private final StatusSignal<Angle> leaderPosition = leader.getPosition();
   private final StatusSignal<AngularVelocity> leaderVelocity = leader.getVelocity();
@@ -55,7 +59,7 @@ public class ExtensionIOTalonFX implements ExtensionIO {
           case COAST -> NeutralModeValue.Coast;
           case BRAKE -> NeutralModeValue.Brake;
         };
-    // Build the OpenLoopRampsConfigs and ClosedLoopRampsConfigs for current smoothing
+
     OpenLoopRampsConfigs openRamps = new OpenLoopRampsConfigs();
     openRamps.DutyCycleOpenLoopRampPeriod = kFlywheelOpenLoopRampPeriod;
     openRamps.VoltageOpenLoopRampPeriod = kFlywheelOpenLoopRampPeriod;
@@ -64,6 +68,7 @@ public class ExtensionIOTalonFX implements ExtensionIO {
     closedRamps.DutyCycleClosedLoopRampPeriod = kFlywheelClosedLoopRampPeriod;
     closedRamps.VoltageClosedLoopRampPeriod = kFlywheelClosedLoopRampPeriod;
     closedRamps.TorqueClosedLoopRampPeriod = kFlywheelClosedLoopRampPeriod;
+    // Build the OpenLoopRampsConfigs and ClosedLoopRampsConfigs for current smoothing
     // Apply the open- and closed-loop ramp configuration for current smoothing
     config.withClosedLoopRamps(closedRamps).withOpenLoopRamps(openRamps);
     // set Motion Magic Velocity settings
@@ -72,10 +77,8 @@ public class ExtensionIOTalonFX implements ExtensionIO {
         400; // Target acceleration of 400 rps/s (0.25 seconds to max)
     motionMagicConfigs.MotionMagicJerk = 4000; // Target jerk of 4000 rps/s/s (0.1 seconds)
 
-    // Apply the configurations to the flywheel motors
+    // Apply the configurations to the extension motor
     PhoenixUtil.tryUntilOk(5, () -> leader.getConfigurator().apply(config, 0.25));
-
-    // If follower rotates in the opposite direction, set "MotorAlignmentValue" to Opposed
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, leaderPosition, leaderVelocity, leaderAppliedVolts, leaderCurrent);
@@ -85,21 +88,19 @@ public class ExtensionIOTalonFX implements ExtensionIO {
   @Override
   public void updateInputs(ExtensionIOInputs inputs) {
     BaseStatusSignal.refreshAll(leaderPosition, leaderVelocity, leaderAppliedVolts, leaderCurrent);
-    inputs.positionRad =
-        Units.rotationsToRadians(leaderPosition.getValueAsDouble()) / kFlywheelGearRatio;
-    inputs.velocityRadPerSec =
-        Units.rotationsToRadians(leaderVelocity.getValueAsDouble()) / kFlywheelGearRatio;
+    inputs.positionRad = Units.rotationsToRadians(leaderPosition.getValueAsDouble()) / 4;
+    inputs.velocityRadPerSec = Units.rotationsToRadians(leaderVelocity.getValueAsDouble()) / 4;
     inputs.appliedVolts = leaderAppliedVolts.getValueAsDouble();
     inputs.currentAmps = new double[] {leaderCurrent.getValueAsDouble()};
+
+    // Most limit switches are normally-closed to ground, reading "true" when
+    // NOT pressed. Flip this if yours is wired normally-open instead.
+    inputs.limitSwitchTriggered = !limitSwitch.get();
   }
 
   @Override
   public void setVoltage(double volts) {
-    final MotionMagicVoltage m_request = new MotionMagicVoltage(volts);
-    m_request.withEnableFOC(isCTREPro);
-    leader.setControl(m_request);
     leader.setVoltage(volts);
-    System.out.println("running");
   }
 
   @Override
@@ -121,6 +122,11 @@ public class ExtensionIOTalonFX implements ExtensionIO {
   @Override
   public void stop() {
     leader.stopMotor();
+  }
+
+  @Override
+  public int[] getPowerPorts() {
+    return powerPorts;
   }
 
   /**

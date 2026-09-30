@@ -7,7 +7,7 @@
 // license that can be found in the AdvantageKit-License.md file
 // at the root directory of this project.
 
-package frc.robot.subsystems.intake;
+package frc.robot.subsystems.belt;
 
 import static frc.robot.Constants.FlywheelConstants.*;
 import static frc.robot.Constants.RobotDevices.*;
@@ -32,12 +32,14 @@ import frc.robot.Constants.PowerConstants;
 import frc.robot.util.PhoenixUtil;
 import frc.robot.util.RBSIEnum.CTREPro;
 
-public class IntakeIOTalonFX implements IntakeIO {
+public class BeltIOTalonFX implements BeltIO {
 
   // Define the leader / follower motors from the Ports section of RobotContainer
-  private final TalonFX leader = new TalonFX(INTAKE.getDeviceNumber(), INTAKE.getCANBus());
+  private final TalonFX leader = new TalonFX(BELT.getDeviceNumber(), BELT.getCANBus());
   // IMPORTANT: Include here all devices listed above that are part of this mechanism!
-  public final int[] powerPorts = {INTAKE.getPowerPort()};
+  public final int[] powerPorts = {
+    FLYWHEEL_LEADER.getPowerPort(), FLYWHEEL_FOLLOWER.getPowerPort()
+  };
 
   private final StatusSignal<Angle> leaderPosition = leader.getPosition();
   private final StatusSignal<AngularVelocity> leaderVelocity = leader.getVelocity();
@@ -47,7 +49,7 @@ public class IntakeIOTalonFX implements IntakeIO {
   private final TalonFXConfiguration config = new TalonFXConfiguration();
   private final boolean isCTREPro = Constants.getPhoenixPro() == CTREPro.LICENSED;
 
-  public IntakeIOTalonFX() {
+  public BeltIOTalonFX() {
     config.CurrentLimits.SupplyCurrentLimit = PowerConstants.kMotorPortMaxCurrent;
     config.CurrentLimits.SupplyCurrentLimitEnable = true;
     config.MotorOutput.NeutralMode =
@@ -75,15 +77,13 @@ public class IntakeIOTalonFX implements IntakeIO {
     // Apply the configurations to the flywheel motors
     PhoenixUtil.tryUntilOk(5, () -> leader.getConfigurator().apply(config, 0.25));
 
-    // If follower rotates in the opposite direction, set "MotorAlignmentValue" to Opposed
-
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, leaderPosition, leaderVelocity, leaderAppliedVolts, leaderCurrent);
     leader.optimizeBusUtilization();
   }
 
   @Override
-  public void updateInputs(IntakeIOInputs inputs) {
+  public void updateInputs(BeltIOInputs inputs) {
     BaseStatusSignal.refreshAll(leaderPosition, leaderVelocity, leaderAppliedVolts, leaderCurrent);
     inputs.positionRad =
         Units.rotationsToRadians(leaderPosition.getValueAsDouble()) / kFlywheelGearRatio;

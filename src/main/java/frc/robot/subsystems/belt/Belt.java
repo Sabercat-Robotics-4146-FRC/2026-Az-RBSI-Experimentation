@@ -1,6 +1,16 @@
-package frc.robot.subsystems.extension;
+// Copyright (c) 2024-2026 Az-FIRST
+// http://github.com/AZ-First
+// Copyright (c) 2021-2026 Littleton Robotics
+// http://github.com/Mechanical-Advantage
+//
+// Use of this source code is governed by a BSD
+// license that can be found in the AdvantageKit-License.md file
+// at the root directory of this project.
+
+package frc.robot.subsystems.belt;
 
 import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.Constants.FlywheelConstants.*;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -10,17 +20,13 @@ import frc.robot.util.RBSISubsystem;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Extension extends RBSISubsystem {
-  private final ExtensionIO io;
-  private final ExtensionIOInputsAutoLogged inputs = new ExtensionIOInputsAutoLogged();
+public class Belt extends RBSISubsystem {
+  private final BeltIO io;
+  private final BeltIOInputsAutoLogged inputs = new BeltIOInputsAutoLogged();
   private final SysIdRoutine sysId;
 
-  // Voltage used for open-loop extend/retract while driving to the limit switch.
-  private static final double EXTEND_VOLTS = 4.0;
-  private static final double RETRACT_VOLTS = -4.0;
-
-  /** Creates a new Extension. */
-  public Extension(ExtensionIO io) {
+  /** Creates a new Flywheel. */
+  public Belt(BeltIO io) {
     this.io = io;
 
     // Switch constants based on mode (the physics simulator is treated as a
@@ -28,11 +34,11 @@ public class Extension extends RBSISubsystem {
     switch (Constants.getMode()) {
       case REAL:
       case REPLAY:
-        io.configureGains(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        io.configureGains(kPreal, 0.0, kDreal, kSreal, kVreal, kAreal);
         break;
       case SIM:
       default:
-        io.configureGains(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        io.configureGains(kPsim, 0.0, kDsim, kSsim, kVsim, kAsim);
         break;
     }
 
@@ -43,7 +49,7 @@ public class Extension extends RBSISubsystem {
                 null,
                 null,
                 null,
-                (state) -> Logger.recordOutput("Extension/SysIdState", state.toString())),
+                (state) -> Logger.recordOutput("Flywheel/SysIdState", state.toString())),
             new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
   }
 
@@ -51,13 +57,7 @@ public class Extension extends RBSISubsystem {
   @Override
   protected void rbsiPeriodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Extension", inputs);
-
-    // Safety net: cut power the instant the limit switch trips, regardless
-    // of which command/direction is currently driving the mechanism.
-    if (inputs.limitSwitchTriggered && inputs.appliedVolts > 0) {
-      stop();
-    }
+    Logger.processInputs("Flywheel", inputs);
   }
 
   /** Run open loop at the specified voltage. */
@@ -70,28 +70,13 @@ public class Extension extends RBSISubsystem {
     var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
     io.setVelocity(velocityRadPerSec);
 
-    Logger.recordOutput("Extension/SetpointRPM", velocityRPM);
+    // Log flywheel setpoint
+    Logger.recordOutput("Flywheel/SetpointRPM", velocityRPM);
   }
 
-  /** Drives the mechanism outward until the limit switch is hit (see isLimitReached()). */
-  public void extend() {
-    runVolts(EXTEND_VOLTS);
-  }
-
-  /** Drives the mechanism back in. */
-  public void retract() {
-    runVolts(RETRACT_VOLTS);
-  }
-
-  /** Stops the mechanism. */
+  /** Stops the flywheel. */
   public void stop() {
     io.stop();
-  }
-
-  /** True once the extension mechanism has reached the limit switch. */
-  @AutoLogOutput(key = "Extension/LimitReached")
-  public boolean isLimitReached() {
-    return inputs.limitSwitchTriggered;
   }
 
   /** Returns a command to run a quasistatic test in the specified direction. */
@@ -105,7 +90,7 @@ public class Extension extends RBSISubsystem {
   }
 
   /** Returns the current velocity in RPM. */
-  @AutoLogOutput(key = "Mechanism/Extension")
+  @AutoLogOutput(key = "Mechanism/Flywheel")
   public double getVelocityRPM() {
     return Units.radiansPerSecondToRotationsPerMinute(inputs.velocityRadPerSec);
   }

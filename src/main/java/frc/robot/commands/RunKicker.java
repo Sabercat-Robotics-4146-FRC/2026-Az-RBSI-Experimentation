@@ -1,25 +1,25 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.kicker.Kicker;
 
-public class RunIntake extends Command {
+public class RunKicker extends Command {
 
-  private final Intake intake;
+  private final Kicker kicker;
 
-  public RunIntake(Intake intake) {
-    this.intake = intake;
-    addRequirements(intake);
+  public RunKicker(Kicker kicker) {
+    this.kicker = kicker;
+    addRequirements(kicker);
   }
 
   @Override
   public void execute() {
-    intake.runVolts(12);
+    kicker.runVolts(5);
   }
 
   @Override
   public void end(boolean interrupted) {
-    intake.stop();
+    kicker.stop();
   }
 
   @Override

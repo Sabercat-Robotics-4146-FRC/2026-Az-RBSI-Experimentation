@@ -7,38 +7,26 @@
 // license that can be found in the AdvantageKit-License.md file
 // at the root directory of this project.
 
-package frc.robot.subsystems.extension;
+package frc.robot.subsystems.shooter;
 
 import frc.robot.util.RBSIIO;
 import org.littletonrobotics.junction.AutoLog;
 
-public interface ExtensionIO extends RBSIIO {
+public interface ShooterIO extends RBSIIO {
 
   @AutoLog
-  public static class ExtensionIOInputs {
+  public static class ShooterIOInputs {
     public double positionRad = 0.0;
     public double velocityRadPerSec = 0.0;
     public double appliedVolts = 0.0;
     public double[] currentAmps = new double[] {};
-
-    // True once the extension mechanism has physically reached the limit switch.
-    public boolean limitSwitchTriggered = false;
   }
 
   /** Updates the set of loggable inputs. */
-  public default void updateInputs(ExtensionIOInputs inputs) {}
-
-  /** Run open loop at the specified voltage. */
-  public default void setVoltage(double volts) {}
-
-  /** Run open loop at the specified percent output. */
-  public default void setPercent(double percent) {}
+  public default void updateInputs(ShooterIOInputs inputs) {}
 
   /** Run closed loop at the specified velocity. */
   public default void setVelocity(double velocityRadPerSec) {}
-
-  /** Stop the mechanism. */
-  public default void stop() {}
 
   /** Set gain constants */
   public default void configureGains(double kP, double kI, double kD, double kS, double kV) {}
